@@ -1,8 +1,6 @@
 class App {
   constructor() {
-    this.notes = [
-      { color: "white", id: 1, title: "Note Title", text: "This is note text" },
-    ];
+    this.notes = JSON.parse(localStorage.getItem("notes")) || [];
     this.title = "";
     this.text = "";
     this.id = "";
@@ -28,6 +26,7 @@ class App {
       this.handleClickListen(event);
       this.selectNote(event);
       this.openModal(event);
+      this.deleteNote(event);
     });
 
     this.$form.addEventListener("submit", (event) => {
@@ -70,7 +69,7 @@ class App {
       this.changeColor(event);
     });
 
-    this.displayNotes();
+    this.render();
   }
 
   handleClickListen(event) {
@@ -112,6 +111,8 @@ class App {
   }
 
   openModal(event) {
+    if (event.target.matches(".toolbar-delete")) return;
+
     if (event.target.closest(".note")) {
       this.$modelTitle.value = this.title;
       this.$modelText.value = this.text;
@@ -132,7 +133,7 @@ class App {
       id: this.notes.length > 0 ? this.notes[this.notes.length - 1].id + 1 : 1,
     };
     this.notes = [...this.notes, newNote];
-    this.displayNotes();
+    this.render();
     this.closeForm();
   }
 
@@ -142,15 +143,16 @@ class App {
     this.notes = this.notes.map((note) =>
       note.id === Number(this.id) ? { ...note, title, text } : note
     );
-    this.displayNotes();
+    this.render();
   }
 
   openTooltip(event) {
     if (!event.target.matches(".toolbar-color")) return;
+    console.log(event.target.getBoundingClientRect());
     this.id = event.target.dataset.id;
     const noteCoords = event.target.getBoundingClientRect();
-    const horizontal = noteCoords.left - 20;
-    const vertical = window.scrollY - 21;
+    const horizontal = noteCoords.left + window.scrollX - 20;
+    const vertical = noteCoords.top + window.scrollY + 20;
     this.$colorTooltip.style.transform = `translate(${horizontal}px, ${vertical}px)`;
     this.$colorTooltip.style.display = "flex";
   }
@@ -166,8 +168,25 @@ class App {
       this.notes = this.notes.map((note) =>
         note.id === Number(this.id) ? { ...note, color } : note
       );
-      this.displayNotes();
+      this.render();
     }
+  }
+
+  deleteNote(event) {
+    event.stopPropagation();
+    if (!event.target.matches(".toolbar-delete")) return;
+    const id = event.target.dataset.id;
+    this.notes = this.notes.filter((note) => note.id !== Number(id));
+    this.render();
+  }
+
+  render() {
+    this.saveNotes();
+    this.displayNotes();
+  }
+
+  saveNotes() {
+    localStorage.setItem("notes", JSON.stringify(this.notes));
   }
 
   displayNotes() {
@@ -187,7 +206,9 @@ class App {
             <img class="toolbar-color" data-id="${note.id}" data-color="${
             note.color
           }" src="https://img.icons8.com/change">
-            <img class="toolbar-delete" src="https://img.icons8.com/delete">
+            <img class="toolbar-delete" data-id="${
+              note.id
+            }" src="https://img.icons8.com/delete">
           </div>
         </div>
       </div>`
