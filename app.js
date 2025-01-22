@@ -47,12 +47,28 @@ class App {
     });
 
     this.$modalCloseButton.addEventListener("click", (event) => {
-      this.closeModal(event);
+      this.closeModal();
     });
 
-    this.$colorTooltip.addEventListener("mouseover", (event) =>
-      this.openColors(event)
+    document.body.addEventListener("mouseover", (event) =>
+      this.openTooltip(event)
     );
+
+    document.body.addEventListener("mouseout", (event) => {
+      this.closeTooltip(event);
+    });
+
+    this.$colorTooltip.addEventListener("mouseover", function () {
+      this.style.display = "flex";
+    });
+
+    this.$colorTooltip.addEventListener("mouseout", function () {
+      this.style.display = "none";
+    });
+
+    this.$colorTooltip.addEventListener("click", (event) => {
+      this.changeColor(event);
+    });
 
     this.displayNotes();
   }
@@ -103,7 +119,7 @@ class App {
     }
   }
 
-  closeModal(event) {
+  closeModal() {
     this.editNote();
     this.$modal.classList.toggle("open-modal");
   }
@@ -129,14 +145,29 @@ class App {
     this.displayNotes();
   }
 
-  openColors(event) {
+  openTooltip(event) {
     if (!event.target.matches(".toolbar-color")) return;
     this.id = event.target.dataset.id;
     const noteCoords = event.target.getBoundingClientRect();
-    const horizontal = noteCoords.left + window.scrollX;
-    const vertical = noteCoords.top + window.scrollY;
+    const horizontal = noteCoords.left - 20;
+    const vertical = window.scrollY - 21;
     this.$colorTooltip.style.transform = `translate(${horizontal}px, ${vertical}px)`;
     this.$colorTooltip.style.display = "flex";
+  }
+
+  closeTooltip(event) {
+    if (!event.target.matches(".toolbar-color")) return;
+    this.$colorTooltip.style.display = "none";
+  }
+
+  changeColor(event) {
+    const color = event.target.dataset.color;
+    if (color) {
+      this.notes = this.notes.map((note) =>
+        note.id === Number(this.id) ? { ...note, color } : note
+      );
+      this.displayNotes();
+    }
   }
 
   displayNotes() {
@@ -153,9 +184,9 @@ class App {
         <div class="note-text">${note.text}</div>
         <div class="toolbar-container">
           <div class="toolbar">
-            <img class="toolbar-color" data-color="${
-              note.color
-            }" src="https://img.icons8.com/change">
+            <img class="toolbar-color" data-id="${note.id}" data-color="${
+            note.color
+          }" src="https://img.icons8.com/change">
             <img class="toolbar-delete" src="https://img.icons8.com/delete">
           </div>
         </div>
